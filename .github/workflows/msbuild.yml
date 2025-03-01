@@ -1,0 +1,71 @@
+name: Build mGBA with Python Bindings on Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  build:
+    runs-on: windows-latest  # 使用 Windows runner
+
+    steps:
+    # 檢查出代碼
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 安裝 Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'  # 指定 Python 版本
+
+    # 安裝 CMake
+    - name: Install CMake
+      run: |
+        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+      shell: powershell
+
+    # 安裝依賴（libpng、SDL2 等）
+    - name: Install dependencies
+      run: |
+        vcpkg install libpng sdl2 zlib --triplet x64-windows
+      shell: cmd
+
+    # 解碼 Base64 URL 並下載 ROM
+    - name: Download and Extract Pokémon FireRed ROM
+      run: |
+        python -c "import base64, urllib.request, zipfile; url = base64.b64decode('aHR0cHM6Ly9zZXJ2ZS5lbXVsYXRvcmdhbWVzLm5ldC9yb21zL2dhbWVib3ktYWR2YW5jZS9Qb2tlbW9uJTIwLSUyMEZpcmUlMjBSZWQlMjBWZXJzaW9uJTIwKFUpJTIwKFYxLjEpLnppcA==').decode('utf-8'); urllib.request.urlretrieve(url, 'rom.zip'); zipfile.ZipFile('rom.zip', 'r').extractall();"
+        dir  # 顯示解壓後的文件，確認 gba 文件名
+      shell: cmd
+
+    # 配置 CMake 並啟用 Python 綁定
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+      shell: cmd
+
+    # 編譯 mGBA
+    - name: Build mGBA
+      run: |
+        cd build
+        cmake --build . --config Release
+      shell: cmd
+
+    # 測試 Python 綁定（假設解壓後文件名為 Pokemon - Fire Red Version (U) (V1.1).gba）
+    - name: Test Python binding with ROM
+      run: |
+        cd build
+        python -c "import mgba.core; core = mgba.core.load_path('../Pokemon - Fire Red Version (U) (V1.1).gba'); core.reset(); mem = mgba.memory.Memory(core); hp = mem.read16(0x02024284 + 0x56); print(f'HP: {hp}')"
+      shell: cmd
+
+    # 上傳構建結果
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mgba-windows-build
+        path: build/Release/
