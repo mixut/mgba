@@ -28,10 +28,10 @@ jobs:
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
       shell: powershell
 
-    # 安裝依賴
+    # 安裝依賴（新增 epoxy）
     - name: Install dependencies
       run: |
-        vcpkg install libpng sdl2 zlib --triplet x64-windows
+        vcpkg install libpng sdl2 zlib epoxy --triplet x64-windows
       shell: cmd
 
     # 下載並解壓 ROM
