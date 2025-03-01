@@ -49,23 +49,29 @@ jobs:
         dir
       shell: cmd
 
-    # 配置 CMake
+    # 配置 CMake（明確設置 BINDIR）
     - name: Configure CMake
-      env:
-        BINDIR: bin  # 設置環境變數
       run: |
         mkdir build
         cd build
         cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DBINDIR=bin
       shell: cmd
 
-    # 編譯 mGBA（確保 BINDIR 在環境中）
-    - name: Build mGBA
-      env:
-        BINDIR: bin  # 再次設置，確保自訂腳本能讀到
+    # 診斷 BINDIR
+    - name: Debug BINDIR
       run: |
         cd build
-        cmake --build . --config Release
+        echo BINDIR is %BINDIR%
+        cmake -LA | findstr BINDIR
+      shell: cmd
+
+    # 編譯 mGBA
+    - name: Build mGBA
+      env:
+        BINDIR: bin  # 作為備用，確保環境變數存在
+      run: |
+        cd build
+        cmake --build . --config Release --verbose
       shell: cmd
 
     # 測試 Python 綁定
