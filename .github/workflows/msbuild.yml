@@ -31,12 +31,12 @@ jobs:
     # 更新 vcpkg
     - name: Update vcpkg
       run: |
-        cd C:/vcpkg
+        cd C:\vcpkg
         git pull
-        .\bootstrap-vcpkg.bat
+        C:\vcpkg\bootstrap-vcpkg.bat
       shell: cmd
 
-    # 安裝依賴（修正為 libepoxy）
+    # 安裝依賴
     - name: Install dependencies
       run: |
         vcpkg install libpng sdl2 zlib libepoxy --triplet x64-windows
