@@ -49,12 +49,12 @@ jobs:
         dir
       shell: cmd
 
-    # 配置 CMake
+    # 配置 CMake（新增 BINDIR）
     - name: Configure CMake
       run: |
         mkdir build
         cd build
-        cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DBINDIR=bin
       shell: cmd
 
     # 編譯 mGBA
