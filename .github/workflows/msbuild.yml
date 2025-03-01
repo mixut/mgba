@@ -49,8 +49,10 @@ jobs:
         dir
       shell: cmd
 
-    # 配置 CMake（明確設置 BINDIR）
+    # 配置 CMake
     - name: Configure CMake
+      env:
+        BINDIR: bin
       run: |
         mkdir build
         cd build
@@ -59,16 +61,18 @@ jobs:
 
     # 診斷 BINDIR
     - name: Debug BINDIR
+      env:
+        BINDIR: bin
       run: |
         cd build
         echo BINDIR is %BINDIR%
-        cmake -LA | findstr BINDIR
+        cmake .. -LA | findstr BINDIR
       shell: cmd
 
     # 編譯 mGBA
     - name: Build mGBA
       env:
-        BINDIR: bin  # 作為備用，確保環境變數存在
+        BINDIR: bin
       run: |
         cd build
         cmake --build . --config Release --verbose
