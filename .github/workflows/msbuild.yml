@@ -69,12 +69,14 @@ jobs:
         cmake .. -LA | findstr BINDIR
       shell: cmd
 
-    # 編譯 mGBA
+    # 編譯 mGBA（手動設置 BINDIR 並執行 stubs.py）
     - name: Build mGBA
       env:
         BINDIR: bin
       run: |
         cd build
+        set BINDIR=bin
+        python ..\src\platform\python\stubs.py > lib.c
         cmake --build . --config Release --verbose
       shell: cmd
 
