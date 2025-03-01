@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'  # 指定 Python 版本
+        python-version: '3.11'
 
     # 安裝 CMake
     - name: Install CMake
@@ -28,20 +28,32 @@ jobs:
         choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
       shell: powershell
 
-    # 安裝依賴（libpng、SDL2 等）
+    # 安裝依賴
     - name: Install dependencies
       run: |
         vcpkg install libpng sdl2 zlib --triplet x64-windows
       shell: cmd
 
-    # 解碼 Base64 URL 並下載 ROM
+    # 下載並解壓 ROM
     - name: Download and Extract Pokémon FireRed ROM
       run: |
-        python -c "import base64, urllib.request, zipfile; url = base64.b64decode('aHR0cHM6Ly9zZXJ2ZS5lbXVsYXRvcmdhbWVzLm5ldC9yb21zL2dhbWVib3ktYWR2YW5jZS9Qb2tlbW9uJTIwLSUyMEZpcmUlMjBSZWQlMjBWZXJzaW9uJTIwKFUpJTIwKFYxLjEpLnppcA==').decode('utf-8'); urllib.request.urlretrieve(url, 'rom.zip'); zipfile.ZipFile('rom.zip', 'r').extractall();"
-        dir  # 顯示解壓後的文件，確認 gba 文件名
+        python -c "import base64, urllib.request, zipfile, os; \
+          url = base64.b64decode('aHR0cHM6Ly9zZXJ2ZS5lbXVsYXRvcmdhbWVzLm5ldC9yb21zL2dhbWVib3ktYWR2YW5jZS9Qb2tlbW9uJTIwLSUyMEZpcmUlMjBSZWQlMjBWZXJzaW9uJTIwKFUpJTIwKFYxLjEpLnppcA==').decode('utf-8'); \
+          print(f'Downloading from {url}'); \
+          try: \
+            urllib.request.urlretrieve(url, 'rom.zip'); \
+            print('Download complete'); \
+            if os.path.exists('rom.zip'): \
+              with zipfile.ZipFile('rom.zip', 'r') as z: z.extractall(); \
+              print('Extraction complete'); \
+            else: \
+              print('Error: rom.zip not found after download'); \
+          except Exception as e: \
+            print(f'Error: {str(e)}');"
+        dir  # 顯示解壓後的文件
       shell: cmd
 
-    # 配置 CMake 並啟用 Python 綁定
+    # 配置 CMake
     - name: Configure CMake
       run: |
         mkdir build
@@ -56,7 +68,7 @@ jobs:
         cmake --build . --config Release
       shell: cmd
 
-    # 測試 Python 綁定（假設解壓後文件名為 Pokemon - Fire Red Version (U) (V1.1).gba）
+    # 測試 Python 綁定
     - name: Test Python binding with ROM
       run: |
         cd build
