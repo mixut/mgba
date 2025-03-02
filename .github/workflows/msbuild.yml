@@ -51,34 +51,19 @@ jobs:
 
     # 配置 CMake
     - name: Configure CMake
-      env:
-        BINDIR: bin
       run: |
         mkdir build
         cd build
-        cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DBINDIR=bin
+        cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
       shell: cmd
 
-    # 診斷 BINDIR
-    - name: Debug BINDIR
-      env:
-        BINDIR: bin
-      run: |
-        cd build
-        echo BINDIR is %BINDIR%
-        cmake .. -LA | findstr BINDIR
-      shell: cmd
-
-    # 編譯 mGBA（手動生成 lib.c 並跳過自訂命令錯誤）
+    # 編譯 mGBA（設置 BINDIR 環境變數）
     - name: Build mGBA
       env:
-        BINDIR: bin
+        BINDIR: D:/a/mgba/mgba/build/Release  # 設置為構建目錄下的 Release 資料夾
       run: |
         cd build
-        set BINDIR=bin
-        python ..\src\platform\python\stubs.py > lib.c 2>&1 || echo "Ignoring stubs.py error"
-        if exist lib.c (echo lib.c generated successfully) else (echo Failed to generate lib.c && exit /b 1)
-        cmake --build . --config Release --verbose
+        set BINDIR=%BINDIR% && cmake --build . --config Release
       shell: cmd
 
     # 測試 Python 綁定
