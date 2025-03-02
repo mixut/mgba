@@ -56,14 +56,20 @@ jobs:
         cd build
         cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
       shell: cmd
-
-    # 編譯 mGBA（設置 BINDIR 環境變數）
-    - name: Build mGBA
-      env:
-        BINDIR: D:/a/mgba/mgba/build/Release  # 設置為構建目錄下的 Release 資料夾
+    
+    - name: Generate lib.c for Python binding
       run: |
         cd build
-        set BINDIR=%BINDIR% && cmake --build . --config Release
+        set BINDIR=D:/a/mgba/mgba/build/Release
+        set CPPFLAGS=-IC:/hostedtoolcache/windows/Python/3.11.9/x64/include -IC:/vcpkg/installed/x64-windows/include
+        python D:/a/mgba/mgba/src/platform/python/_builder.py > lib.c
+        type lib.c
+      shell: cmd
+    
+    - name: Build mGBA
+      run: |
+        cd build
+        cmake --build . --config Release --target mgba-pylib
       shell: cmd
 
     # 測試 Python 綁定
