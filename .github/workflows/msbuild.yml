@@ -57,18 +57,13 @@ jobs:
         cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
       shell: cmd
     
-    - name: Generate lib.c for Python binding
+    - name: Build mGBA
       run: |
         cd build
         set BINDIR=D:/a/mgba/mgba/build/Release
         set CPPFLAGS=-IC:/hostedtoolcache/windows/Python/3.11.9/x64/include -IC:/vcpkg/installed/x64-windows/include
         python D:/a/mgba/mgba/src/platform/python/_builder.py > lib.c
         type lib.c
-      shell: cmd
-    
-    - name: Build mGBA
-      run: |
-        cd build
         cmake --build . --config Release --target mgba-pylib
       shell: cmd
 
