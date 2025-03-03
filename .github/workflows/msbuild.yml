@@ -53,7 +53,9 @@ jobs:
           VCPKG_DEFAULT_TRIPLET: x64-windows
 
       - name: Clean build directory
-        run: rmdir /s /q build 2>nul || true && mkdir build
+        run: |
+          if exist build rmdir /s /q build
+          mkdir build
         shell: cmd
 
       - name: Configure CMake
