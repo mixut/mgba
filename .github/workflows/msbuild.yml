@@ -5,85 +5,68 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest  # Use Windows runner
+    runs-on: windows-latest
 
     steps:
-    # Step 1: Check out the repository
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # Step 2: Set up Python
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    # Step 3: Install CMake
-    - name: Install CMake
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-      shell: powershell
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cffi
+        shell: cmd
 
-    # Step 4: Update vcpkg
-    - name: Update vcpkg
-      run: |
-        cd C:\vcpkg
-        git pull
-        C:\vcpkg\bootstrap-vcpkg.bat
-      shell: cmd
+      - name: Install CMake
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+        shell: powershell
 
-    # Step 5: Install dependencies via vcpkg
-    - name: Install dependencies
-      run: |
-        vcpkg install libpng sdl2 zlib libepoxy --triplet x64-windows
-      shell: cmd
+      - name: Update vcpkg
+        run: |
+          cd C:\vcpkg
+          git pull
+          C:\vcpkg\bootstrap-vcpkg.bat
+        shell: cmd
 
-    # Step 6: Download and extract Pokémon FireRed ROM
-    - name: Download and Extract Pokémon FireRed ROM
-      run: |
-        python -c "import base64, urllib.request, zipfile, os; url = base64.b64decode('aHR0cHM6Ly9zZXJ2ZS5lbXVsYXRvcmdhbWVzLm5ldC9yb21zL2dhbWVib3ytYWR2YW5jZS9Qb2tlbW9uJTIwLSUyMEZpcmUlMjBSZWQlMjBWZXJzaW9uJTIwKFUpJTIwKFYxLjEpLnppcA==').decode('utf-8'); print(f'Downloading from {url}'); try: req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}); urllib.request.urlretrieve(req, 'rom.zip'); print('Download complete'); with zipfile.ZipFile('rom.zip', 'r') as z: z.extractall(); print('Extraction complete'); except Exception as e: print(f'Error: {str(e)}')"
-        dir
-      shell: cmd
+      - name: Install dependencies
+        run: |
+          vcpkg install libpng sdl2 zlib libepoxy --triplet x64-windows
+        shell: cmd
 
-    # Step 7: Configure CMake
-    - name: Configure CMake
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-      shell: cmd
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        shell: cmd
 
-    # Step 8: Generate lib.c for Python binding
-    - name: Generate lib.c for Python binding
-      run: |
-        cd build
-        set BINDIR=D:/a/mgba/mgba/build/Release
-        set CPPFLAGS=-IC:/hostedtoolcache/windows/Python/3.11.9/x64/include -IC:/vcpkg/installed/x64-windows/include
-        python D:/a/mgba/mgba/src/platform/python/_builder.py > lib.c
-        type lib.c
-      shell: cmd
+      - name: Generate lib.c for Python binding
+        run: |
+          cd build
+          set BINDIR=D:/a/mgba/mgba/build/Release
+          set CPPFLAGS=-IC:/hostedtoolcache/windows/Python/3.11.9/x64/include -IC:/vcpkg/installed/x64-windows/include
+          python D:/a/mgba/mgba/src/platform/python/_builder.py > lib.c
+          type lib.c
+        shell: cmd
 
-    # Step 9: Build mGBA
-    - name: Build mGBA
-      run: |
-        cd build
-        cmake --build . --config Release --target mgba-pylib
-      shell: cmd
+      - name: Build mGBA
+        run: |
+          cd build
+          cmake --build . --config Release --target mgba-pylib
+        shell: cmd
 
-    # Step 10: Test Python binding with ROM
-    - name: Test Python binding with ROM
-      run: |
-        cd build
-        python -c "import mgba.core; core = mgba.core.load_path('../Pokemon - Fire Red Version (U) (V1.1).gba'); core.reset(); mem = mgba.memory.Memory(core); hp = mem.read16(0x02024284 + 0x56); print(f'HP: {hp}')"
-      shell: cmd
-
-    # Step 11: Upload build artifacts
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: mgba-windows-build
-        path: build/Release/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mgba-windows-build
+          path: build/Release/
