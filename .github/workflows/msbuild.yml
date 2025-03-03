@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          architecture: 'x64'
 
       - name: Install Python dependencies
         run: |
@@ -26,26 +27,37 @@ jobs:
           pip install cffi
         shell: cmd
 
-      - name: Install CMake
+      - name: Install Chocolatey
         run: |
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
         shell: powershell
 
-      - name: Update vcpkg
+      - name: Install CMake
         run: |
-          cd C:\vcpkg
-          git pull
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --confirm
+        shell: cmd
+
+      - name: Install vcpkg
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
           C:\vcpkg\bootstrap-vcpkg.bat
         shell: cmd
 
       - name: Install dependencies
         run: |
-          vcpkg install libpng sdl2 zlib libepoxy --triplet x64-windows
+          C:\vcpkg\vcpkg install libpng sdl2 zlib libepoxy --triplet x64-windows
+        shell: cmd
+        env:
+          VCPKG_DEFAULT_TRIPLET: x64-windows
+
+      - name: Clean build directory
+        run: rmdir /s /q build 2>nul || true && mkdir build
         shell: cmd
 
       - name: Configure CMake
         run: |
-          mkdir build
           cd build
           cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
         shell: cmd
@@ -53,20 +65,23 @@ jobs:
       - name: Generate lib.c for Python binding
         run: |
           cd build
-          set BINDIR=D:/a/mgba/mgba/build/Release
-          set CPPFLAGS=-IC:/hostedtoolcache/windows/Python/3.11.9/x64/include -IC:/vcpkg/installed/x64-windows/include
-          python D:/a/mgba/mgba/src/platform/python/_builder.py > lib.c
-          type lib.c
+          set BINDIR=%CD%\Release
+          set CPPFLAGS=-I"%Python_HOME%/include" -I"C:/vcpkg/installed/x64-windows/include"
+          python ../src/platform/python/_builder.py > lib.c
         shell: cmd
 
       - name: Build mGBA
         run: |
-          cd build
-          cmake --build . --config Release --target mgba-pylib
+          cmake --build build --config Release --target mgba-pylib
+        shell: cmd
+
+      - name: Verify build artifacts
+        run: |
+          dir build\Release /s
         shell: cmd
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mgba-windows-build
-          path: build/Release/
+          path: build/Release/ 
