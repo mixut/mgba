@@ -64,13 +64,26 @@ jobs:
           cmake .. -DBUILD_PYTHON=ON -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
         shell: cmd
 
+      - name: Install MSVC build tools
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Get Python path
+        id: python-loc
+        run: |
+          echo "PYHOME=$(python -c "import sys; print(sys.prefix)")" >> $GITHUB_ENV
+
       - name: Generate lib.c for Python binding
         run: |
           cd build
           set BINDIR=%CD%\Release
-          set CPPFLAGS=-I"%Python_HOME%/include" -I"C:/vcpkg/installed/x64-windows/include"
+          set CPPFLAGS=-I"%PYHOME%\include" -I"C:/vcpkg/installed/x64-windows/include"
+          where cpp
           python ../src/platform/python/_builder.py > lib.c
         shell: cmd
+        env:
+          PATH: ${{ env.PATH }};C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.39.33519\bin\Hostx64\x64
 
       - name: Build mGBA
         run: |
