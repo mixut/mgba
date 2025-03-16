@@ -69,6 +69,10 @@ jobs:
         with:
           arch: x64
 
+      - name: Install MinGW (for cpp)
+        run: choco install mingw --confirm
+        shell: cmd
+
       - name: Get Python path
         id: python-loc
         run: |
@@ -83,7 +87,7 @@ jobs:
           python ../src/platform/python/_builder.py > lib.c
         shell: cmd
         env:
-          PATH: ${{ env.PATH }};C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.39.33519\bin\Hostx64\x64
+          PATH: ${{ env.PATH }};C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.39.33519\bin\Hostx64\x64;C:\mingw64\bin
 
       - name: Build mGBA
         run: |
@@ -99,4 +103,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mgba-windows-build
-          path: build/Release/ 
+          path: build/Release/
